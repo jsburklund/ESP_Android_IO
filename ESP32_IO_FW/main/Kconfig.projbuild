@@ -114,6 +114,17 @@ config TCP_PERF_PKT_SIZE
     int "Size of TCP packet"
     default 1460
     help
-	the data send&recv packet size. 
+	the data send&recv packet size.
+
+config BLINK_GPIO
+    int "Blink GPIO number"
+        range 0 34
+        default 5
+        help
+                GPIO number (IOxx) to blink on and off.
+
+                Sime GPIOs are used for other purposes (flash connections, etc.) and cannot be used to blink.
+
+                GPIOs 35-39 are input-only so cannot be used as outputs.
 		
 endmenu
