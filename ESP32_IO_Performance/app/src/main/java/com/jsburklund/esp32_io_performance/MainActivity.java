@@ -13,6 +13,10 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainActivity extends AppCompatActivity {
@@ -59,36 +63,47 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    OutputStream ioOutStream;
+    InputStream ioInStream;
+    boolean blinkstate = false;
+    class BlinkRunnable implements Runnable {
+        @Override
+        public void run() {
+            try {
+                if (blinkstate) {
+                    ioOutStream.write("ssnn".getBytes(StandardCharsets.UTF_8));
+                } else {
+                    ioOutStream.write("ssff".getBytes(StandardCharsets.UTF_8));
+                }
+                ioOutStream.flush();
+                blinkstate ^= true;
+            } catch (IOException e) {}
+        }
+    }
+
     class ServerThread extends SafeShutdownRunnable {
         ServerSocket socket;
         Socket iosocket;
+
         public void run() {
             should_shutdown.set(false);
             printLineConsole("Starting TCP connection as: Server");
             try {
                 socket = new ServerSocket(ESP_PORT);
-                printLineConsole(String.format("Listening on port %d",ESP_PORT));
+                printLineConsole(String.format("Listening on port %d", ESP_PORT));
                 printLineConsole("Waiting for connection...");
                 iosocket = socket.accept();
                 printConsole("Connected\n");
-                InputStream inputStream = iosocket.getInputStream();
-                OutputStream outputStream = iosocket.getOutputStream();
-                while (!should_shutdown.get()) {
-                    outputStream.write("ssnn".getBytes(StandardCharsets.UTF_8));
-                    outputStream.flush();
-                    Thread.sleep(250);
-                    outputStream.write("ssnf".getBytes(StandardCharsets.UTF_8));
-                    outputStream.flush();
-                    Thread.sleep(250);
-                }
+                ioInStream = iosocket.getInputStream();
+                ioOutStream = iosocket.getOutputStream();
+                ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+                final ScheduledFuture<?> ioHandler = scheduler.scheduleAtFixedRate(new BlinkRunnable(), 0, 250*1000, TimeUnit.MICROSECONDS);
+                while (!should_shutdown.get()) {}
                 printLineConsole("Shutting down Server thread");
                 iosocket.close();
                 socket.close();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 Log.e(TAG, e.getMessage());
-            } catch (InterruptedException e) {
-                return;
             }
         }
     }
@@ -100,22 +115,18 @@ public class MainActivity extends AppCompatActivity {
             printLineConsole("Start TCP Connection as: Client");
             try {
                 socket = new Socket(ESP_IP, ESP_PORT);
-                InputStream inputStream = socket.getInputStream();
-                OutputStream outputStream = socket.getOutputStream();
+                ioInStream = socket.getInputStream();
+                ioOutStream = socket.getOutputStream();
+                ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+                final ScheduledFuture<?> ioHandler = scheduler.scheduleAtFixedRate(new BlinkRunnable(), 0, 250*1000, TimeUnit.MICROSECONDS);
                 while (!should_shutdown.get()) {
-                  outputStream.write("ssnn".getBytes(StandardCharsets.UTF_8));
-                  outputStream.flush();
-                  Thread.sleep(250);
-                  outputStream.write("ssnf".getBytes(StandardCharsets.UTF_8));
-                  outputStream.flush();
-                  Thread.sleep(250);
+
                 }
                 printLineConsole("Shutting down Client thread");
+                ioHandler.cancel(true);
                 socket.close();
             } catch (IOException e) {
                 e.printStackTrace();
-            } catch (InterruptedException e) {
-                return;
             }
         }
     }
