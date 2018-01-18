@@ -8,13 +8,19 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public class MainActivity extends AppCompatActivity {
 
     private TextView statustextview, consoletextview;
     private ScrollView consolescrollview;
     private ToggleButton testtoggle, serverclienttoggle;
 
-    Thread serverthread, clientthread, testconsolethread;
+    private Thread serverthread, clientthread, testconsolethread;
+    private SafeShutdownRunnable serverrunnable, clientrunnable, testconsolerunnable;
+
+    private final String ESP_IP = "192.168.4.2";
+    private final int ESP_PORT = 44567;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,41 +33,56 @@ public class MainActivity extends AppCompatActivity {
         testtoggle = (ToggleButton) findViewById(R.id.StartStopToggle);
         serverclienttoggle = (ToggleButton) findViewById(R.id.ServerClientToggle);
 
-        testconsolethread = new Thread(new TestConsoleThread());
+        testconsolerunnable = new TestConsoleThread();
+        testconsolethread = new Thread(testconsolerunnable);
+        serverrunnable = new ServerThread();
+        clientthread = new Thread(clientthread);
+        clientrunnable = new ClientThread();
+        clientthread = new Thread(clientrunnable);
         testtoggle.setOnClickListener(new StartButtonListener());
 
     }
 
-    class ServerThread implements Runnable {
-        public void run() {
-
+    abstract class SafeShutdownRunnable implements Runnable {
+        // Method to safely signal the thread to shutdown
+        protected AtomicBoolean should_shutdown = new AtomicBoolean(false);
+        public void shutdown() {
+            should_shutdown.set(true);
         }
     }
 
-    class ClientThread implements Runnable {
+    class ServerThread extends SafeShutdownRunnable {
         public void run() {
+            should_shutdown.set(false);
+            printConsole("Starting TCP connection as: Server");
+            while (!should_shutdown.get()) {
 
+            }
         }
     }
 
-    class TestConsoleThread implements Runnable {
+    class ClientThread extends SafeShutdownRunnable {
         public void run() {
-            while(true) {
+            should_shutdown.set(false);
+            printConsole("Start TCP Connection as: Client");
+            while (!should_shutdown.get()) {
+
+            }
+        }
+    }
+
+    class TestConsoleThread extends SafeShutdownRunnable {
+        public void run() {
+            should_shutdown.set(false);
+            while(!should_shutdown.get()) {
                 //Print a line every so often
-                consoletextview.post(new Runnable() {
-                    public void run() {
-                        consoletextview.append("Hello World"+(System.currentTimeMillis()/1000.0)+'\n');
-                    }
-                });
-                try { Thread.sleep(500); }
-                //Break the loop if interrupted
-                catch (InterruptedException e) { break;}
+                printConsole("Hello World"+(System.currentTimeMillis()/1000.0)+'\n');
+                try { Thread.sleep(500); } catch (InterruptedException e) { }
             }
         }
     }
 
     class StartButtonListener implements View.OnClickListener {
-
         @Override
         public void onClick(View view) {
             if (testtoggle.isChecked() && testconsolethread!=null) {
@@ -70,10 +91,21 @@ public class MainActivity extends AppCompatActivity {
                 }
             } else if (!testtoggle.isChecked() && testconsolethread!=null) {
                 if (testconsolethread.isAlive()) {
-                    testconsolethread.interrupt();
+                    testconsolerunnable.shutdown();
                 }
             }
         }
+    }
+
+    private void printConsole(final String text) {
+        if (consoletextview==null) {
+            return;
+        }
+        consoletextview.post(new Runnable() {
+            public void run() {
+                consoletextview.append(text);
+            }
+        });
     }
 
 }
