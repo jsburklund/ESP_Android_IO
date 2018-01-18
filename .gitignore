@@ -1,3 +1,7 @@
+#### ESP32 Firmware Stuff ####
+ESP32_IO_FW/sdkconfig
+ESP32_IO_FW/sdkconfig.old
+ESP32_IO_FW/build/
 
 #### Android Stuff ####
 
