@@ -41,6 +41,9 @@ public class MainActivity extends AppCompatActivity {
         testtoggle = (ToggleButton) findViewById(R.id.StartStopToggle);
         serverclienttoggle = (ToggleButton) findViewById(R.id.ServerClientToggle);
 
+        // Setup the console textview
+        consoletextview.setText("Console: "+System.lineSeparator());
+
         serverrunnable = new ServerThread();
         serverthread = new Thread(serverrunnable);
         clientrunnable = new ClientThread();
@@ -62,11 +65,11 @@ public class MainActivity extends AppCompatActivity {
         Socket iosocket;
         public void run() {
             should_shutdown.set(false);
-            printConsole("Starting TCP connection as: Server");
+            printLineConsole("Starting TCP connection as: Server");
             try {
                 socket = new ServerSocket(ESP_PORT);
-                printConsole(String.format("Listening on port %d%n",ESP_PORT));
-                printConsole("Waiting for connection..."+System.lineSeparator());
+                printLineConsole(String.format("Listening on port %d",ESP_PORT));
+                printLineConsole("Waiting for connection...");
                 iosocket = socket.accept();
                 printConsole("Connected\n");
                 InputStream istream = iosocket.getInputStream();
@@ -77,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     printConsole(String.format("%d, ", val));
                 }
-                printConsole("Shutting down Server thread"+System.lineSeparator());
+                printLineConsole("Shutting down Server thread");
                 iosocket.close();
                 socket.close();
             }
@@ -91,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
         private Socket socket;
         public void run() {
             should_shutdown.set(false);
-            printConsole("Start TCP Connection as: Client"+System.lineSeparator());
+            printLineConsole("Start TCP Connection as: Client");
             try {
                 socket = new Socket(ESP_IP, ESP_PORT);
                 while(!socket.isConnected()) {
@@ -113,7 +116,7 @@ public class MainActivity extends AppCompatActivity {
                         printConsole(String.format("%d, ",val));
                     }
                 }
-                printConsole("Shutting down Client thread"+System.lineSeparator());
+                printLineConsole("Shutting down Client thread");
                 socket.close();
             } catch (IOException e) { Log.e(TAG, e.getMessage()); }
         }
@@ -178,6 +181,11 @@ public class MainActivity extends AppCompatActivity {
                 consoletextview.append(text);
             }
         });
+    }
+
+    // Convenience funciton to print a line to the on screen console
+    private void printLineConsole(final String text) {
+        printConsole(text+System.lineSeparator());
     }
 
 }
