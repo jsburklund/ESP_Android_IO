@@ -82,13 +82,15 @@ static void tcp_conn(void *pvParameters)
 
 #if EXAMPLE_ESP_TCP_PERF_TX
         if (tx_rx_task == NULL) {
-            if (pdPASS != xTaskCreate(&send_data, "send_data", 4096, NULL, 4, &tx_rx_task)) {
+            //if (pdPASS != xTaskCreate(&send_data, "send_data", 4096, NULL, 4, &tx_rx_task)) {
+            if (pdPASS != xTaskCreate(&io_data, "io_data", 4096, NULL, 4, &tx_rx_task)) {
                 ESP_LOGE(TAG, "Send task create fail!");
             }
         }
 #else /*EXAMPLE_ESP_TCP_PERF_TX*/
         if (tx_rx_task == NULL) {
-            if (pdPASS != xTaskCreate(&recv_data, "recv_data", 4096, NULL, 4, &tx_rx_task)) {
+            //if (pdPASS != xTaskCreate(&recv_data, "recv_data", 4096, NULL, 4, &tx_rx_task)) {
+            if (pdPASS != xTaskCreate(&io_data, "io_data", 4096, NULL, 4, &tx_rx_task)) {
                 ESP_LOGE(TAG, "Recv task create fail!");
             }
         }
@@ -96,26 +98,26 @@ static void tcp_conn(void *pvParameters)
         double bps;
 
         while (1) {
-            g_total_data = 0;
+            /*g_total_data = 0;
             vTaskDelay(3000 / portTICK_RATE_MS);//every 3s
-            bps = (g_total_data * 8.0 / 3.0) / 1000000.0;
+            bps = (g_total_data * 8.0 / 3.0) / 1000000.0; */
 
             if (g_rxtx_need_restart) {
                 printf("send or receive task encoutner error, need to restart\n");
                 break;
-            }
+            } 
 
-#if EXAMPLE_ESP_TCP_PERF_TX
-            ESP_LOGI(TAG, "tcp send %.2f Mbits per sec!\n", bps);
-#if EXAMPLE_ESP_TCP_DELAY_INFO
-            ESP_LOGI(TAG, "tcp send packet total:%d  succeed:%d  failed:%d\n"
-                     "time(ms):0-30:%d 30-100:%d 100-300:%d 300-1000:%d 1000+:%d\n",
-                     g_total_pack, g_send_success, g_send_fail, g_delay_classify[0],
-                     g_delay_classify[1], g_delay_classify[2], g_delay_classify[3], g_delay_classify[4]);
-#endif /*EXAMPLE_ESP_TCP_DELAY_INFO*/
-#else
-            ESP_LOGI(TAG, "tcp recv %.2f Mbits per sec!\n", bps);
-#endif /*EXAMPLE_ESP_TCP_PERF_TX*/
+//#if EXAMPLE_ESP_TCP_PERF_TX
+//            ESP_LOGI(TAG, "tcp send %.2f Mbits per sec!\n", bps);
+//#if EXAMPLE_ESP_TCP_DELAY_INFO
+//            ESP_LOGI(TAG, "tcp send packet total:%d  succeed:%d  failed:%d\n"
+//                     "time(ms):0-30:%d 30-100:%d 100-300:%d 300-1000:%d 1000+:%d\n",
+//                     g_total_pack, g_send_success, g_send_fail, g_delay_classify[0],
+//                     g_delay_classify[1], g_delay_classify[2], g_delay_classify[3], g_delay_classify[4]);
+//#endif /*EXAMPLE_ESP_TCP_DELAY_INFO*/
+//#else
+//            ESP_LOGI(TAG, "tcp recv %.2f Mbits per sec!\n", bps);
+//#endif /*EXAMPLE_ESP_TCP_PERF_TX*/
         }
 
         close_socket();
@@ -126,15 +128,15 @@ static void tcp_conn(void *pvParameters)
 
 void blink_task(void *pvParameter) {
   /* Configure IOMUX register for BLINK_GPIO pad */
-  gpio_pad_select_gpio(BLINK_GPIO);
+  gpio_pad_select_gpio(CONFIG_BLINK_GPIO);
   // Set GPIO as push/pull output
-  gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
+  gpio_set_direction(CONFIG_BLINK_GPIO, GPIO_MODE_OUTPUT);
   while (1) {
     // LED on
-    gpio_set_level(BLINK_GPIO, 0);
+    gpio_set_level(CONFIG_BLINK_GPIO, 0);
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     // LED off
-    gpio_set_level(BLINK_GPIO, 1);
+    gpio_set_level(CONFIG_BLINK_GPIO, 1);
     vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
 }
@@ -158,5 +160,5 @@ void app_main(void)
     xTaskCreate(&tcp_conn, "tcp_conn", 4096, NULL, 5, NULL);
 
     //Start the Blink task
-    xTaskCreate(&blink_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
+    //xTaskCreate(&blink_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
 }

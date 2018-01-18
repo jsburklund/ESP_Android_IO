@@ -71,6 +71,8 @@ esp_err_t create_tcp_client();
 void send_data(void *pvParameters);
 //receive data task
 void recv_data(void *pvParameters);
+//IO data task
+void io_data(void *pvParameters);
 
 //close all socket
 void close_socket();

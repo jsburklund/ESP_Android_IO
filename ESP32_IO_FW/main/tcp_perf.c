@@ -15,10 +15,13 @@
 #include "esp_wifi.h"
 #include "esp_event_loop.h"
 #include "esp_log.h"
-
+#include "driver/gpio.h"
+#include "sdkconfig.h"
 
 #include "tcp_perf.h"
 
+
+#define IO_PACKET_SIZE 4
 
 /* FreeRTOS event group to signal when we are connected to wifi */
 EventGroupHandle_t tcp_event_group;
@@ -179,6 +182,67 @@ void recv_data(void *pvParameters)
     vTaskDelete(NULL);
 }
 
+// Receive and use IO packets
+void io_data(void *pvParameters) {
+  //Set up any of the required peripherals
+  gpio_pad_select_gpio(5);
+  gpio_set_direction(CONFIG_BLINK_GPIO, GPIO_MODE_OUTPUT);
+  gpio_set_level(CONFIG_BLINK_GPIO, 0);
+  ESP_LOGI(TAG, "Setup GPIO Pin");
+
+  //Setup stuff for receiving the packet
+  int len=0;
+  char *databuff = (char *)malloc(IO_PACKET_SIZE * sizeof(char));
+
+  // Continuously receive data
+  while (1) {
+    ESP_LOGI(TAG, "Starting new packet, size %d", IO_PACKET_SIZE);
+    //Receive a new packet
+    int to_recv = IO_PACKET_SIZE;
+    // Clear the start packet bytes
+    databuff[0] = 0;
+    databuff[1] = 0;
+
+    //Find the first header byte
+    ESP_LOGI(TAG, "Looking for packet start");
+    while (databuff[0] != 's') {
+      //Get the next byte
+      len = recv(connect_socket, databuff, 1, 0);
+      ESP_LOGI(TAG, "Found char %c", databuff[0]);
+      if (len<1) { break; }
+    }
+    if (len<1) {continue; }  //Byte not received. Start packet again
+    ESP_LOGI(TAG, "Looking for second header");
+    //Get the second header byte
+    len = recv(connect_socket, databuff+1, 1, 0);
+    ESP_LOGI(TAG, "Found char %c\n", databuff[1]);
+    if (len<1 && databuff[1] != 's') { continue; } //Bad header, start again
+
+    //Receive the payload of the packet
+    ESP_LOGI(TAG, "Recieving Payload");
+    to_recv = IO_PACKET_SIZE-2;
+    while(to_recv > 0) {  //Loop until all data received
+      //Get a chunk of the packet (hopefully all of it)
+      len = recv(connect_socket, databuff+(IO_PACKET_SIZE-to_recv), to_recv, 0);
+      if (len > 0) {
+        to_recv -= len;
+      } else {
+        show_socket_error_reason("recv_data", connect_socket);
+        break;
+      }
+    }
+    //Parse the received packet
+    if (to_recv > 0) { continue; }  //Didn't receive all of the packet
+    ESP_LOGI(TAG, "Packet received, databuff[3]==%c", databuff[3]);
+    if (databuff[3] == 'n') {
+      //Turn the LED on
+      gpio_set_level(CONFIG_BLINK_GPIO, 1);
+    } else  {
+      //Turn the LED off
+      gpio_set_level(CONFIG_BLINK_GPIO, 0);
+    }
+  }
+}
 
 //use this esp32 as a tcp server. return ESP_OK:success ESP_FAIL:error
 esp_err_t create_tcp_server()
