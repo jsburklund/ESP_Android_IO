@@ -4,16 +4,15 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.ToggleButton;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainActivity extends AppCompatActivity {
@@ -72,13 +71,15 @@ public class MainActivity extends AppCompatActivity {
                 printLineConsole("Waiting for connection...");
                 iosocket = socket.accept();
                 printConsole("Connected\n");
-                InputStream istream = iosocket.getInputStream();
+                InputStream inputStream = iosocket.getInputStream();
+                OutputStream outputStream = iosocket.getOutputStream();
                 while (!should_shutdown.get()) {
-                    int val = istream.read();
-                    if (val < 0) {
-                        break;
-                    }
-                    printConsole(String.format("%d, ", val));
+                    outputStream.write("ssnn".getBytes(StandardCharsets.UTF_8));
+                    outputStream.flush();
+                    Thread.sleep(250);
+                    outputStream.write("ssnf".getBytes(StandardCharsets.UTF_8));
+                    outputStream.flush();
+                    Thread.sleep(250);
                 }
                 printLineConsole("Shutting down Server thread");
                 iosocket.close();
@@ -86,6 +87,8 @@ public class MainActivity extends AppCompatActivity {
             }
             catch (IOException e) {
                 Log.e(TAG, e.getMessage());
+            } catch (InterruptedException e) {
+                return;
             }
         }
     }
@@ -97,28 +100,23 @@ public class MainActivity extends AppCompatActivity {
             printLineConsole("Start TCP Connection as: Client");
             try {
                 socket = new Socket(ESP_IP, ESP_PORT);
-                while(!socket.isConnected()) {
-                    Log.d(TAG,"Waiting for socket to connect");
-                    Thread.sleep(500);
-                }
-            } catch (Exception e)  { Log.e(TAG, e.getMessage()); return; }
-            try {
-                if (socket==null) {
-                    Log.e(TAG, "Socket is null");
-                }
-                InputStream istream = socket.getInputStream();
+                InputStream inputStream = socket.getInputStream();
+                OutputStream outputStream = socket.getOutputStream();
                 while (!should_shutdown.get()) {
-                    int val = istream.read();
-                    if (val < 0) {
-                        break;  //Found the end of the input stream
-                    } else {
-                        // Valid character received
-                        printConsole(String.format("%d, ",val));
-                    }
+                  outputStream.write("ssnn".getBytes(StandardCharsets.UTF_8));
+                  outputStream.flush();
+                  Thread.sleep(250);
+                  outputStream.write("ssnf".getBytes(StandardCharsets.UTF_8));
+                  outputStream.flush();
+                  Thread.sleep(250);
                 }
                 printLineConsole("Shutting down Client thread");
                 socket.close();
-            } catch (IOException e) { Log.e(TAG, e.getMessage()); }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                return;
+            }
         }
     }
 
