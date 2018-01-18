@@ -29,8 +29,8 @@
             android:layout_alignParentTop="true"
             android:layout_toEndOf="@+id/StartStopToggle"
             android:text="ToggleButton"
-            android:textOff="Client"
-            android:textOn="Server"
+            android:textOff="Server"
+            android:textOn="Client"
             tools:layout_editor_absoluteX="16dp"
             tools:layout_editor_absoluteY="16dp" />
 
