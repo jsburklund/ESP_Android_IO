@@ -2,10 +2,10 @@ In general, this method performed very poorly. This was tested in the RBE lab, w
 
 Results with Java ScheduledExecutorService and TimerTask with 50msec periods:
 
-![ScheduledExecutorService](TEK00000.png)
+![ScheduledExecutorService](TEK00000.PNG)
 
-![TimerTask](TEK00001.png)
+![TimerTask](TEK00001.PNG)
 
 Results with ESP as the TCP server:
 
-![ESP TCP Server](TEK00002.png)
+![ESP TCP Server](TEK00002.PNG)
