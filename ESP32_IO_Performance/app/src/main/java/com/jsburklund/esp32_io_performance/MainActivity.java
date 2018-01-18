@@ -12,6 +12,7 @@ import android.widget.ToggleButton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -59,11 +60,30 @@ public class MainActivity extends AppCompatActivity {
     }
 
     class ServerThread extends SafeShutdownRunnable {
+        ServerSocket socket;
+        Socket iosocket;
         public void run() {
             should_shutdown.set(false);
             printConsole("Starting TCP connection as: Server");
-            while (!should_shutdown.get()) {
-
+            try {
+                socket = new ServerSocket(ESP_PORT);
+                printConsole(String.format("Listening on port %d\n",ESP_PORT));
+                printConsole("Waiting for connection...\n");
+                iosocket = socket.accept();
+                printConsole("Connected\n");
+                InputStream istream = iosocket.getInputStream();
+                while (!should_shutdown.get()) {
+                    int val = istream.read();
+                    if (val < 0) {
+                        break;
+                    }
+                    printConsole(String.format("%d, ", val));
+                }
+                iosocket.close();
+                socket.close();
+            }
+            catch (IOException e) {
+                Log.e(TAG, e.getMessage());
             }
         }
     }
