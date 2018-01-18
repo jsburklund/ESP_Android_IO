@@ -34,6 +34,8 @@ step3:
 #include "esp_log.h"
 #include "esp_err.h"
 #include "nvs_flash.h"
+#include "driver/gpio.h"
+#include "sdkconfig.h"
 
 #include "tcp_perf.h"
 
@@ -122,6 +124,21 @@ static void tcp_conn(void *pvParameters)
     vTaskDelete(NULL);
 }
 
+void blink_task(void *pvParameter) {
+  /* Configure IOMUX register for BLINK_GPIO pad */
+  gpio_pad_select_gpio(BLINK_GPIO);
+  // Set GPIO as push/pull output
+  gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
+  while (1) {
+    // LED on
+    gpio_set_level(BLINK_GPIO, 0);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    // LED off
+    gpio_set_level(BLINK_GPIO, 1);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+  }
+}
+
 void app_main(void)
 {
     esp_err_t ret = nvs_flash_init();
@@ -139,4 +156,7 @@ void app_main(void)
     wifi_init_sta();
 #endif /*EXAMPLE_ESP_WIFI_MODE_AP*/
     xTaskCreate(&tcp_conn, "tcp_conn", 4096, NULL, 5, NULL);
+
+    //Start the Blink task
+    xTaskCreate(&blink_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
 }
