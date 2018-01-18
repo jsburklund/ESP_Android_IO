@@ -66,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
     OutputStream ioOutStream;
     InputStream ioInStream;
     boolean blinkstate = false;
+    final int blinktimeusec = 50*1000;
     class BlinkRunnable implements Runnable {
         @Override
         public void run() {
@@ -97,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
                 ioInStream = iosocket.getInputStream();
                 ioOutStream = iosocket.getOutputStream();
                 ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-                final ScheduledFuture<?> ioHandler = scheduler.scheduleAtFixedRate(new BlinkRunnable(), 0, 250*1000, TimeUnit.MICROSECONDS);
+                final ScheduledFuture<?> ioHandler = scheduler.scheduleAtFixedRate(new BlinkRunnable(), 0, blinktimeusec, TimeUnit.MICROSECONDS);
                 while (!should_shutdown.get()) {}
                 printLineConsole("Shutting down Server thread");
                 iosocket.close();
@@ -118,7 +119,7 @@ public class MainActivity extends AppCompatActivity {
                 ioInStream = socket.getInputStream();
                 ioOutStream = socket.getOutputStream();
                 ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-                final ScheduledFuture<?> ioHandler = scheduler.scheduleAtFixedRate(new BlinkRunnable(), 0, 250*1000, TimeUnit.MICROSECONDS);
+                final ScheduledFuture<?> ioHandler = scheduler.scheduleAtFixedRate(new BlinkRunnable(), 0, blinktimeusec, TimeUnit.MICROSECONDS);
                 while (!should_shutdown.get()) {
 
                 }
