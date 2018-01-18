@@ -22,6 +22,8 @@
 
 
 #define IO_PACKET_SIZE 4
+//#define DEBUGIO
+#define FASTIO
 
 /* FreeRTOS event group to signal when we are connected to wifi */
 EventGroupHandle_t tcp_event_group;
@@ -196,7 +198,9 @@ void io_data(void *pvParameters) {
 
   // Continuously receive data
   while (1) {
+    #ifdef DEBUGIO
     ESP_LOGI(TAG, "Starting new packet, size %d", IO_PACKET_SIZE);
+    #endif
     //Receive a new packet
     int to_recv = IO_PACKET_SIZE;
     // Clear the start packet bytes
@@ -204,22 +208,32 @@ void io_data(void *pvParameters) {
     databuff[1] = 0;
 
     //Find the first header byte
+    #ifdef DEBUGIO
     ESP_LOGI(TAG, "Looking for packet start");
+    #endif
     while (databuff[0] != 's') {
       //Get the next byte
       len = recv(connect_socket, databuff, 1, 0);
+      #ifdef DEBUGIO
       ESP_LOGI(TAG, "Found char %c", databuff[0]);
+      #endif
       if (len<1) { break; }
     }
     if (len<1) {continue; }  //Byte not received. Start packet again
+    #ifdef DEBUGIO
     ESP_LOGI(TAG, "Looking for second header");
+    #endif
     //Get the second header byte
     len = recv(connect_socket, databuff+1, 1, 0);
+    #ifdef DEBUGIO
     ESP_LOGI(TAG, "Found char %c\n", databuff[1]);
+    #endif
     if (len<1 && databuff[1] != 's') { continue; } //Bad header, start again
 
     //Receive the payload of the packet
+    #ifdef DEBUGIO
     ESP_LOGI(TAG, "Recieving Payload");
+    #endif
     to_recv = IO_PACKET_SIZE-2;
     while(to_recv > 0) {  //Loop until all data received
       //Get a chunk of the packet (hopefully all of it)
@@ -233,7 +247,9 @@ void io_data(void *pvParameters) {
     }
     //Parse the received packet
     if (to_recv > 0) { continue; }  //Didn't receive all of the packet
+    #ifndef FASTIO
     ESP_LOGI(TAG, "Packet received, databuff[3]==%c", databuff[3]);
+    #endif
     if (databuff[3] == 'n') {
       //Turn the LED on
       gpio_set_level(CONFIG_BLINK_GPIO, 1);
