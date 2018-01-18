@@ -22,8 +22,8 @@ public class MainActivity extends AppCompatActivity {
     private ScrollView consolescrollview;
     private ToggleButton testtoggle, serverclienttoggle;
 
-    private Thread serverthread, clientthread, testconsolethread;
-    private SafeShutdownRunnable serverrunnable, clientrunnable, testconsolerunnable;
+    private Thread serverthread, clientthread;
+    private SafeShutdownRunnable serverrunnable, clientrunnable;
 
     private final String ESP_IP = "192.168.4.1";
     private final int ESP_PORT = 4567;
@@ -41,8 +41,6 @@ public class MainActivity extends AppCompatActivity {
         testtoggle = (ToggleButton) findViewById(R.id.StartStopToggle);
         serverclienttoggle = (ToggleButton) findViewById(R.id.ServerClientToggle);
 
-        testconsolerunnable = new TestConsoleThread();
-        testconsolethread = new Thread(testconsolerunnable);
         serverrunnable = new ServerThread();
         serverthread = new Thread(serverrunnable);
         clientrunnable = new ClientThread();
@@ -116,17 +114,6 @@ public class MainActivity extends AppCompatActivity {
                 }
                 socket.close();
             } catch (IOException e) { Log.e(TAG, e.getMessage()); }
-        }
-    }
-
-    class TestConsoleThread extends SafeShutdownRunnable {
-        public void run() {
-            should_shutdown.set(false);
-            while(!should_shutdown.get()) {
-                //Print a line every so often
-                printConsole("Hello World"+(System.currentTimeMillis()/1000.0)+'\n');
-                try { Thread.sleep(500); } catch (InterruptedException e) { }
-            }
         }
     }
 
