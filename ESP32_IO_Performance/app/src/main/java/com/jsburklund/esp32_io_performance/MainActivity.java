@@ -65,8 +65,8 @@ public class MainActivity extends AppCompatActivity {
             printConsole("Starting TCP connection as: Server");
             try {
                 socket = new ServerSocket(ESP_PORT);
-                printConsole(String.format("Listening on port %d\n",ESP_PORT));
-                printConsole("Waiting for connection...\n");
+                printConsole(String.format("Listening on port %d%n",ESP_PORT));
+                printConsole("Waiting for connection..."+System.lineSeparator());
                 iosocket = socket.accept();
                 printConsole("Connected\n");
                 InputStream istream = iosocket.getInputStream();
@@ -77,6 +77,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     printConsole(String.format("%d, ", val));
                 }
+                printConsole("Shutting down Server thread"+System.lineSeparator());
                 iosocket.close();
                 socket.close();
             }
@@ -90,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
         private Socket socket;
         public void run() {
             should_shutdown.set(false);
-            printConsole("Start TCP Connection as: Client");
+            printConsole("Start TCP Connection as: Client"+System.lineSeparator());
             try {
                 socket = new Socket(ESP_IP, ESP_PORT);
                 while(!socket.isConnected()) {
@@ -112,6 +113,7 @@ public class MainActivity extends AppCompatActivity {
                         printConsole(String.format("%d, ",val));
                     }
                 }
+                printConsole("Shutting down Client thread"+System.lineSeparator());
                 socket.close();
             } catch (IOException e) { Log.e(TAG, e.getMessage()); }
         }
@@ -120,22 +122,48 @@ public class MainActivity extends AppCompatActivity {
     class StartButtonListener implements View.OnClickListener {
         @Override
         public void onClick(View view) {
-            if (!testtoggle.isChecked()) {
-                //Execute the Server Thread
-                //Kill an existing thread if it is already running
-                if (serverthread != null && serverthread.isAlive()) {
-                    serverrunnable.shutdown();
-                    while(serverthread.isAlive()) {}
+            // Run when the start button is clicked
+            if (testtoggle.isChecked()) {
+                final String servertype;
+                if (!serverclienttoggle.isChecked()) {
+                    //Execute the Server Thread
+                    //Kill an existing thread if it is already running
+                    if (serverthread != null && serverthread.isAlive()) {
+                        serverrunnable.shutdown();
+                        while (serverthread.isAlive()) {
+                        }
+                    }
+                    serverthread.start();
+                    servertype = "server";
+                } else {
+                    //Execute the Client Thread
+                    //Kill an existing thread if it is already running
+                    if (clientthread != null && clientthread.isAlive()) {
+                        clientrunnable.shutdown();
+                        while (clientthread.isAlive()) {
+                        }
+                    }
+                    clientthread.start();
+                    servertype = "client";
                 }
-                serverthread.start();
+                statustextview.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        statustextview.setText("Running "+servertype);
+                    }
+                });
             } else {
-                //Execute the Client Thread
-                //Kill an existing thread if it is already running
-                if (clientthread != null && clientthread.isAlive()) {
-                    clientrunnable.shutdown();
-                    while(clientthread.isAlive()) {}
-                }
-                clientthread.start();
+                //Stop button pressed
+                // Shutdown the threads
+                serverrunnable.shutdown();
+                clientrunnable.shutdown();
+                //Signify that the test is stoppped
+                statustextview.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        statustextview.setText("Stopped");
+                    }
+                });
             }
         }
     }

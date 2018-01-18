@@ -40,7 +40,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
             android:layout_toEndOf="@+id/ServerClientToggle"
-            android:text="TextView"
+            android:text="Stopped"
             tools:layout_editor_absoluteX="192dp"
             tools:layout_editor_absoluteY="16dp" />
 
