@@ -76,9 +76,9 @@ public class MainActivity extends AppCompatActivity {
             try {
                 String packet;
                 if (blinkstate) {
-                    packet = "ssnn";
+                    packet = "ssnnabcdefghijklmnopqrstabcdefghijklmnopqrstabcdefghijklmnopqrst";
                 } else {
-                    packet = "ssff";
+                    packet = "ssffabcdefghijklmnopqrstabcdefghijklmnopqrstabcdefghijklmnopqrst";
                 }
                 socket.send(new DatagramPacket(packet.getBytes(StandardCharsets.UTF_8), packet.length(), address, ESP_PORT));
                 blinkstate ^= true;

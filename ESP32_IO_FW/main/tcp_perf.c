@@ -21,7 +21,7 @@
 #include "tcp_perf.h"
 
 
-#define IO_PACKET_SIZE 4
+#define IO_PACKET_SIZE 64
 //#define DEBUGIO
 #define FASTIO
 
