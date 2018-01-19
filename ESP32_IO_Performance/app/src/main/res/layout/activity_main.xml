@@ -34,12 +34,22 @@
             tools:layout_editor_absoluteX="16dp"
             tools:layout_editor_absoluteY="16dp" />
 
-        <TextView
-            android:id="@+id/StatusTextView"
+        <EditText
+            android:id="@+id/TimePD"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
             android:layout_toEndOf="@+id/ServerClientToggle"
+            android:ems="10"
+            android:hint="20 msec"
+            android:inputType="number" />
+
+        <TextView
+            android:id="@+id/StatusTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentTop="true"
             android:text="Stopped"
             tools:layout_editor_absoluteX="192dp"
             tools:layout_editor_absoluteY="16dp" />

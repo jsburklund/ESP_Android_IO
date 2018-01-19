@@ -2,8 +2,10 @@ package com.jsburklund.esp32_io_performance;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Editable;
 import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.ToggleButton;
@@ -27,6 +29,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView statustextview, consoletextview;
     private ScrollView consolescrollview;
     private ToggleButton testtoggle, serverclienttoggle;
+    private EditText timepd;
 
     private Thread serverthread, clientthread;
     private SafeShutdownRunnable serverrunnable, clientrunnable;
@@ -46,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
         consolescrollview = (ScrollView) findViewById(R.id.ConsoleScrollView);
         testtoggle = (ToggleButton) findViewById(R.id.StartStopToggle);
         serverclienttoggle = (ToggleButton) findViewById(R.id.ServerClientToggle);
+        timepd = (EditText) findViewById(R.id.TimePD);
 
         // Setup the console textview
         consoletextview.setText("Console: "+System.lineSeparator());
@@ -54,8 +58,8 @@ public class MainActivity extends AppCompatActivity {
         serverthread = new Thread(serverrunnable);
         clientrunnable = new ClientThread();
         clientthread = new Thread(clientrunnable);
-        testtoggle.setOnClickListener(new StartButtonListener());
 
+        testtoggle.setOnClickListener(new StartButtonListener());
     }
 
     abstract class SafeShutdownRunnable implements Runnable {
@@ -69,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
     DatagramSocket socket;
     InetAddress address;
     boolean blinkstate = false;
-    final int blinktimeusec = 20*1000;
+    int blinktimeusec = 20*1000;
     class BlinkRunnable implements Runnable {
         @Override
         public void run() {
@@ -136,6 +140,15 @@ public class MainActivity extends AppCompatActivity {
             // Run when the start button is clicked
             if (testtoggle.isChecked()) {
                 final String servertype;
+
+                // Get the time period
+                if (timepd.getText().length() > 0) {
+                    //Have some text to parse
+                    int time = Integer.valueOf(timepd.getText().toString());
+                    if (time > 0 && time < 1000) {
+                        blinktimeusec = time*1000;
+                    }
+                }
                 if (!serverclienttoggle.isChecked()) {
                     //Execute the Server Thread
                     //Kill an existing thread if it is already running
