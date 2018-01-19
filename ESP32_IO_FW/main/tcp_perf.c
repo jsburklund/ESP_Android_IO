@@ -362,7 +362,8 @@ void wifi_init_softap()
             .ssid_len = 0,
             .max_connection = EXAMPLE_MAX_STA_CONN,
             .password = EXAMPLE_DEFAULT_PWD,
-            .authmode = WIFI_AUTH_WPA_WPA2_PSK
+            .authmode = WIFI_AUTH_WPA_WPA2_PSK,
+            .channel = 6-2
         },
     };
     if (strlen(EXAMPLE_DEFAULT_PWD) == 0) {
