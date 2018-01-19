@@ -62,15 +62,19 @@ static void tcp_conn(void *pvParameters)
             /*create tcp socket*/
             ESP_LOGI(TAG, "tcp_server will start after 3s...");
             vTaskDelay(3000 / portTICK_RATE_MS);
-            ESP_LOGI(TAG, "create_tcp_server.");
-            socket_ret = create_tcp_server();
+            //ESP_LOGI(TAG, "create_tcp_server.");
+            //socket_ret = create_tcp_server();
+            ESP_LOGI(TAG, "create_udp_server.");
+            socket_ret = create_udp_server();
         }
 #else /*EXAMPLE_ESP_TCP_MODE_SERVER*/
         if (socket_ret == ESP_FAIL) {
             ESP_LOGI(TAG, "tcp_client will start after 20s...");
             vTaskDelay(20000 / portTICK_RATE_MS);
-            ESP_LOGI(TAG, "create_tcp_client.");
-            socket_ret = create_tcp_client();
+            //ESP_LOGI(TAG, "create_tcp_client.");
+            //socket_ret = create_tcp_client();
+            ESP_LOGI(TAG, "create_udp_client.");
+            socket_ret = create_udp_client();
         }
 #endif
         if (socket_ret == ESP_FAIL) {

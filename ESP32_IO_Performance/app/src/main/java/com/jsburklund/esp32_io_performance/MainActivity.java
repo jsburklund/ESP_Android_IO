@@ -10,6 +10,9 @@ import android.widget.ToggleButton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
@@ -63,45 +66,42 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    OutputStream ioOutStream;
-    InputStream ioInStream;
+    DatagramSocket socket;
+    InetAddress address;
     boolean blinkstate = false;
-    final int blinktimeusec = 50*1000;
+    final int blinktimeusec = 20*1000;
     class BlinkRunnable implements Runnable {
         @Override
         public void run() {
             try {
+                String packet;
                 if (blinkstate) {
-                    ioOutStream.write("ssnn".getBytes(StandardCharsets.UTF_8));
+                    packet = "ssnn";
                 } else {
-                    ioOutStream.write("ssff".getBytes(StandardCharsets.UTF_8));
+                    packet = "ssff";
                 }
-                ioOutStream.flush();
+                socket.send(new DatagramPacket(packet.getBytes(StandardCharsets.UTF_8), packet.length(), address, ESP_PORT));
                 blinkstate ^= true;
-            } catch (IOException e) {}
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
     class ServerThread extends SafeShutdownRunnable {
-        ServerSocket socket;
-        Socket iosocket;
 
         public void run() {
             should_shutdown.set(false);
             printLineConsole("Starting TCP connection as: Server");
             try {
-                socket = new ServerSocket(ESP_PORT);
+                socket = new DatagramSocket(ESP_PORT);
+                address = InetAddress.getByName(ESP_IP);
                 printLineConsole(String.format("Listening on port %d", ESP_PORT));
-                printLineConsole("Waiting for connection...");
-                iosocket = socket.accept();
-                printConsole("Connected\n");
-                ioInStream = iosocket.getInputStream();
-                ioOutStream = iosocket.getOutputStream();
                 ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
                 final ScheduledFuture<?> ioHandler = scheduler.scheduleAtFixedRate(new BlinkRunnable(), 0, blinktimeusec, TimeUnit.MICROSECONDS);
                 while (!should_shutdown.get()) {}
                 printLineConsole("Shutting down Server thread");
-                iosocket.close();
+                ioHandler.cancel(true);
                 socket.close();
             } catch (IOException e) {
                 Log.e(TAG, e.getMessage());
@@ -110,14 +110,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     class ClientThread extends SafeShutdownRunnable {
-        private Socket socket;
         public void run() {
             should_shutdown.set(false);
             printLineConsole("Start TCP Connection as: Client");
             try {
-                socket = new Socket(ESP_IP, ESP_PORT);
-                ioInStream = socket.getInputStream();
-                ioOutStream = socket.getOutputStream();
+                socket = new DatagramSocket();
+                address = InetAddress.getByName(ESP_IP);
                 ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
                 final ScheduledFuture<?> ioHandler = scheduler.scheduleAtFixedRate(new BlinkRunnable(), 0, blinktimeusec, TimeUnit.MICROSECONDS);
                 while (!should_shutdown.get()) {

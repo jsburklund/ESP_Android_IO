@@ -66,6 +66,10 @@ void wifi_init_softap();
 esp_err_t create_tcp_server();
 //create a tcp client socket. return ESP_OK:success ESP_FAIL:error
 esp_err_t create_tcp_client();
+//create a udp server socket. return ESP_OK:success ESP_FAIL:error
+esp_err_t create_udp_server();
+//create a udp client socket. return ESP_OK:success ESP_FAIL:error
+esp_err_t create_udp_client();
 
 //send data task
 void send_data(void *pvParameters);

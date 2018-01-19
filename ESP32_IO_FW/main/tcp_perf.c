@@ -207,47 +207,13 @@ void io_data(void *pvParameters) {
     databuff[0] = 0;
     databuff[1] = 0;
 
-    //Find the first header byte
-    #ifdef DEBUGIO
-    ESP_LOGI(TAG, "Looking for packet start");
-    #endif
-    while (databuff[0] != 's') {
-      //Get the next byte
-      len = recv(connect_socket, databuff, 1, 0);
-      #ifdef DEBUGIO
-      ESP_LOGI(TAG, "Found char %c", databuff[0]);
-      #endif
-      if (len<1) { break; }
-    }
-    if (len<1) {continue; }  //Byte not received. Start packet again
-    #ifdef DEBUGIO
-    ESP_LOGI(TAG, "Looking for second header");
-    #endif
-    //Get the second header byte
-    len = recv(connect_socket, databuff+1, 1, 0);
-    #ifdef DEBUGIO
-    ESP_LOGI(TAG, "Found char %c\n", databuff[1]);
-    #endif
-    if (len<1 && databuff[1] != 's') { continue; } //Bad header, start again
+    //Receive the packet
+    len = recv(connect_socket, databuff, IO_PACKET_SIZE, 0);
 
-    //Receive the payload of the packet
-    #ifdef DEBUGIO
-    ESP_LOGI(TAG, "Recieving Payload");
-    #endif
-    to_recv = IO_PACKET_SIZE-2;
-    while(to_recv > 0) {  //Loop until all data received
-      //Get a chunk of the packet (hopefully all of it)
-      len = recv(connect_socket, databuff+(IO_PACKET_SIZE-to_recv), to_recv, 0);
-      if (len > 0) {
-        to_recv -= len;
-      } else {
-        show_socket_error_reason("recv_data", connect_socket);
-        break;
-      }
-    }
-    //Parse the received packet
-    if (to_recv > 0) { continue; }  //Didn't receive all of the packet
     #ifndef FASTIO
+    ESP_LOGI(TAG, "Packet received, databuff[0]==%c", databuff[0]);
+    ESP_LOGI(TAG, "Packet received, databuff[1]==%c", databuff[1]);
+    ESP_LOGI(TAG, "Packet received, databuff[2]==%c", databuff[2]);
     ESP_LOGI(TAG, "Packet received, databuff[3]==%c", databuff[3]);
     #endif
     if (databuff[3] == 'n') {
@@ -312,6 +278,46 @@ esp_err_t create_tcp_client()
         return ESP_FAIL;
     }
     ESP_LOGI(TAG, "connect to server success!");
+    return ESP_OK;
+}
+
+//create a udp server socket. return ESP_OK:success ESP_FAIL:error
+esp_err_t create_udp_server()
+{
+    ESP_LOGI(TAG, "create_udp_server() port:%d", EXAMPLE_DEFAULT_PORT);
+    connect_socket = socket(AF_INET, SOCK_DGRAM, 0);
+    if (connect_socket < 0) {
+    	show_socket_error_reason("create", connect_socket);
+	return ESP_FAIL;
+    }
+    struct sockaddr_in server_addr;
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(EXAMPLE_DEFAULT_PORT);
+    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    if (bind(connect_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+    	show_socket_error_reason("connect", connect_socket);
+	close(connect_socket);
+	return ESP_FAIL;
+    }
+    return ESP_OK;
+}
+
+//create a udp client socket. return ESP_OK:success ESP_FAIL:error
+esp_err_t create_udp_client()
+{
+    ESP_LOGI(TAG, "create_udp_client()");
+    ESP_LOGI(TAG, "connecting to %s:%d",
+	    EXAMPLE_DEFAULT_SERVER_IP, EXAMPLE_DEFAULT_PORT);
+    connect_socket = socket(AF_INET, SOCK_DGRAM, 0);
+    if (connect_socket < 0) {
+    	show_socket_error_reason("create", connect_socket);
+	return ESP_FAIL;
+    }
+    /*for client remote_addr is also server_addr*/
+    client_addr.sin_family = AF_INET;
+    client_addr.sin_port = htons(EXAMPLE_DEFAULT_PORT);
+    client_addr.sin_addr.s_addr = inet_addr(EXAMPLE_DEFAULT_SERVER_IP);
+
     return ESP_OK;
 }
 
